@@ -3,106 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CelCord | Backup Chat</title>
+    <title>Celcord | Friend Group Hub</title>
     <style>
-        body { 
-            background: #313338; 
-            color: #dcddde; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            display: flex; 
-            flex-direction: column; 
-            height: 100vh; 
-            margin: 0; 
-        }
+        :root { --bg-server: #1e1f22; --bg-channels: #2b2d31; --bg-chat: #313338; --text: #dbdee1; --blurple: #5865f2; }
+        body { background: var(--bg-chat); color: var(--text); font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; display: flex; height: 100vh; margin: 0; overflow: hidden; }
+
+        /* Sidebar for Servers */
+        .server-sidebar { width: 72px; background: var(--bg-server); display: flex; flex-direction: column; align-items: center; padding-top: 12px; gap: 8px; }
+        .server-icon { width: 48px; height: 48px; background: #313338; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; color: white; font-weight: bold; }
+        .server-icon:hover, .server-icon.active { border-radius: 30%; background: var(--blurple); }
+
+        /* Sidebar for Channels */
+        .channel-sidebar { width: 240px; background: var(--bg-channels); display: flex; flex-direction: column; }
+        .server-name { padding: 15px; font-weight: bold; border-bottom: 1px solid #1e1f22; color: white; display: flex; justify-content: space-between; }
+        .chan { padding: 8px 12px; margin: 2px 8px; border-radius: 4px; cursor: pointer; color: #949ba4; font-size: 15px; }
+        .chan:hover { background: #35373c; color: #dbdee1; }
+        .chan.active { background: #404249; color: white; }
+
+        /* Main Chat Area */
+        .chat-container { flex: 1; display: flex; flex-direction: column; }
+        #chat-window { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        .message { background: rgba(255,255,255,0.03); padding: 10px; border-radius: 4px; }
+        .msg-user { font-weight: bold; color: white; font-size: 0.9em; margin-bottom: 4px; }
+        .embed { margin-top: 8px; max-width: 400px; display: block; border-radius: 8px; }
+
+        /* Input Area */
+        .input-box { padding: 20px; background: var(--bg-chat); }
+        .inner-input { background: #383a40; border-radius: 8px; display: flex; align-items: center; padding: 10px 15px; }
+        #msg-field { flex: 1; background: transparent; border: none; color: white; outline: none; padding: 5px; }
+        #user-field { width: 80px; background: transparent; border: none; color: var(--blurple); font-weight: bold; outline: none; }
         
-        #header {
-            padding: 15px 20px;
-            background: #2b2d31;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-            font-weight: bold;
-            color: #fff;
-            display: flex;
-            align-items: center;
-        }
-
-        #chat-box { 
-            flex: 1; 
-            overflow-y: auto; 
-            padding: 20px; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 12px; 
-        }
-
-        .msg { 
-            background: #2b2d31; 
-            padding: 12px; 
-            border-radius: 8px; 
-            max-width: 80%;
-            align-self: flex-start;
-            position: relative;
-        }
-
-        .user { 
-            font-weight: bold; 
-            color: #5865f2; 
-            display: block; 
-            font-size: 0.85em; 
-            margin-bottom: 4px; 
-            text-transform: uppercase;
-        }
-
-        #input-area { 
-            padding: 20px; 
-            background: #313338; 
-            display: flex; 
-            gap: 10px; 
-        }
-
-        input { 
-            padding: 12px; 
-            border-radius: 5px; 
-            border: none; 
-            background: #383a40; 
-            color: white; 
-            outline: none;
-        }
-
-        #username { width: 120px; }
-        #message { flex: 1; }
-
-        button { 
-            padding: 10px 20px; 
-            background: #5865f2; 
-            color: white; 
-            border: none; 
-            border-radius: 5px; 
-            cursor: pointer; 
-            font-weight: bold;
-            transition: 0.2s;
-        }
-
-        button:hover { background: #4752c4; }
+        /* Modal for Invites */
+        #invite-modal { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background: #2b2d31; padding: 25px; border-radius: 8px; border: 2px solid var(--blurple); z-index: 1000; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        .btn { background: var(--blurple); color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div id="header"># general - CelCord</div>
+    <div class="server-sidebar">
+        <div class="server-icon active">C</div>
+        <button class="server-icon" onclick="showInvite()">+</button>
+    </div>
 
-    <div id="chat-box"></div>
+    <div class="channel-sidebar">
+        <div class="server-name">
+            <span id="display-name">Celcord</span>
+        </div>
+        <div style="height: 10px;"></div>
+        <div class="chan active" onclick="switchChannel('general', this)"># general</div>
+        <div class="chan" onclick="switchChannel('media', this)"># images-and-clips</div>
+        <div class="chan" onclick="switchChannel('off-topic', this)"># off-topic</div>
+    </div>
 
-    <div id="input-area">
-        <input type="text" id="username" placeholder="Username">
-        <input type="text" id="message" placeholder="Message #general">
-        <button id="sendBtn">Send</button>
+    <div class="chat-container">
+        <div id="chat-window"></div>
+        <div class="input-box">
+            <div class="inner-input">
+                <input type="text" id="user-field" placeholder="User" value="Guest">
+                <input type="text" id="msg-field" placeholder="Message #general">
+            </div>
+        </div>
+    </div>
+
+    <div id="invite-modal">
+        <h2 style="margin-top:0">Server Invite</h2>
+        <p>Send this link to your friends:</p>
+        <input type="text" id="invite-url" readonly style="width:100%; padding:8px; background:#1e1f22; border:none; color:white; margin-bottom:15px;">
+        <button class="btn" onclick="document.getElementById('invite-modal').style.display='none'">Close</button>
     </div>
 
     <script type="module">
-        // Import Firebase SDKs
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, push, onChildAdded, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // Your specific CelCord Configuration
+        // CONFIG FROM celcord-89727
         const firebaseConfig = {
             apiKey: "AIzaSyDVMvB87r5yb91NeJP7Fy3ro-F7KD_a6Vw",
             authDomain: "celcord-89727.firebaseapp.com",
@@ -110,52 +84,79 @@
             projectId: "celcord-89727",
             storageBucket: "celcord-89727.firebasestorage.app",
             messagingSenderId: "382347512851",
-            appId: "1:382347512851:web:750eb3a20b4854d86903e6",
-            measurementId: "G-V73EGQTBE8"
+            appId: "1:382347512851:web:750eb3a20b4854d86903e6"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-        const messagesRef = ref(db, 'messages');
 
-        const sendBtn = document.getElementById('sendBtn');
-        const msgInput = document.getElementById('message');
-        const nameInput = document.getElementById('username');
-        const chatBox = document.getElementById('chat-box');
+        // GET SERVER AND CHANNEL FROM URL
+        const params = new URLSearchParams(window.location.search);
+        let currentServer = params.get('invite') || 'main-hub';
+        let currentChannel = 'general';
+        document.getElementById('display-name').innerText = currentServer.toUpperCase();
 
-        // Function to send message
-        function handleSend() {
-            const user = nameInput.value.trim() || "Anonymous";
-            const text = msgInput.value.trim();
+        let msgRef = ref(db, `servers/${currentServer}/channels/${currentChannel}`);
 
-            if(text !== "") {
-                push(messagesRef, {
+        // SWITCH CHANNEL FUNCTION
+        window.switchChannel = (name, el) => {
+            currentChannel = name;
+            document.querySelectorAll('.chan').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById('msg-field').placeholder = `Message #${name}`;
+            document.getElementById('chat-window').innerHTML = ''; // Clear for new channel
+            msgRef = ref(db, `servers/${currentServer}/channels/${currentChannel}`);
+            listenForMessages();
+        };
+
+        // INVITE SYSTEM
+        window.showInvite = () => {
+            const link = `${window.location.href.split('?')[0]}?invite=${currentServer}`;
+            document.getElementById('invite-url').value = link;
+            document.getElementById('invite-modal').style.display = 'block';
+        };
+
+        // SENDING MESSAGES
+        const input = document.getElementById('msg-field');
+        input.addEventListener('keypress', (e) => {
+            if(e.key === 'Enter' && input.value.trim() !== "") {
+                const user = document.getElementById('user-field').value;
+                push(msgRef, {
                     user: user,
-                    text: text,
-                    timestamp: serverTimestamp()
+                    text: input.value,
+                    time: serverTimestamp()
                 });
-                msgInput.value = "";
+                input.value = "";
             }
+        });
+
+        // LISTENING & EMBEDDING
+        function listenForMessages() {
+            onChildAdded(msgRef, (snap) => {
+                const m = snap.val();
+                const div = document.createElement('div');
+                div.className = 'message';
+                
+                let content = `<div class="msg-user">${m.user}</div><div>${m.text}</div>`;
+                
+                // AUTO-EMBED LOGIC
+                if (m.text.match(/\.(jpeg|jpg|gif|png)$/) != null) {
+                    content += `<img class="embed" src="${m.text}">`;
+                } else if (m.text.includes('youtube.com/watch?v=')) {
+                    const id = m.text.split('v=')[1].split('&')[0];
+                    content += `<iframe class="embed" width="400" height="225" src="https://www.youtube.com/embed/${id}" frameborder="0" allowfullscreen></iframe>`;
+                } else if (m.text.match(/\.(mp4|webm)$/) != null) {
+                    content += `<video class="embed" controls src="${m.text}"></video>`;
+                }
+
+                div.innerHTML = content;
+                const chat = document.getElementById('chat-window');
+                chat.appendChild(div);
+                chat.scrollTop = chat.scrollHeight;
+            });
         }
 
-        // Send on click
-        sendBtn.onclick = handleSend;
-
-        // Send on Enter key
-        msgInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') handleSend();
-        });
-
-        // Listen for new messages
-        onChildAdded(messagesRef, (data) => {
-            const msgData = data.val();
-            const div = document.createElement('div');
-            div.className = "msg";
-            div.innerHTML = `<span class="user">${msgData.user}</span>${msgData.text}`;
-            chatBox.appendChild(div);
-            chatBox.scrollTop = chatBox.scrollHeight;
-        });
+        listenForMessages();
     </script>
 </body>
 </html>
