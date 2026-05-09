@@ -3,80 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Celcord | Friend Group Hub</title>
+    <title>Celcord</title>
     <style>
-        :root { --bg-server: #1e1f22; --bg-channels: #2b2d31; --bg-chat: #313338; --text: #dbdee1; --blurple: #5865f2; }
-        body { background: var(--bg-chat); color: var(--text); font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; display: flex; height: 100vh; margin: 0; overflow: hidden; }
+        :root { --bg-side: #1e1f22; --bg-chan: #2b2d31; --bg-main: #313338; --blurple: #5865f2; --text: #dbdee1; --header: #ffffff; --bg-pop: #111214; }
+        body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: var(--bg-main); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
 
-        /* Sidebar for Servers */
-        .server-sidebar { width: 72px; background: var(--bg-server); display: flex; flex-direction: column; align-items: center; padding-top: 12px; gap: 8px; }
-        .server-icon { width: 48px; height: 48px; background: #313338; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; color: white; font-weight: bold; }
-        .server-icon:hover, .server-icon.active { border-radius: 30%; background: var(--blurple); }
+        /* Sidebar & Servers */
+        .sidebar { width: 72px; background: var(--bg-side); display: flex; flex-direction: column; align-items: center; padding-top: 12px; gap: 8px; }
+        .srv-btn { width: 48px; height: 48px; background: #313338; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; color: white; font-weight: bold; font-size: 20px; }
+        .srv-btn:hover { border-radius: 30%; background: var(--blurple); }
 
-        /* Sidebar for Channels */
-        .channel-sidebar { width: 240px; background: var(--bg-channels); display: flex; flex-direction: column; }
-        .server-name { padding: 15px; font-weight: bold; border-bottom: 1px solid #1e1f22; color: white; display: flex; justify-content: space-between; }
-        .chan { padding: 8px 12px; margin: 2px 8px; border-radius: 4px; cursor: pointer; color: #949ba4; font-size: 15px; }
-        .chan:hover { background: #35373c; color: #dbdee1; }
-        .chan.active { background: #404249; color: white; }
+        /* Channel List */
+        .channels { width: 240px; background: var(--bg-chan); display: flex; flex-direction: column; position: relative; }
+        .srv-header { padding: 12px 16px; font-weight: bold; color: white; border-bottom: 1px solid #1e1f22; display: flex; justify-content: space-between; cursor: pointer; }
+        .srv-header:hover { background: #35373c; }
 
-        /* Main Chat Area */
-        .chat-container { flex: 1; display: flex; flex-direction: column; }
-        #chat-window { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
-        .message { background: rgba(255,255,255,0.03); padding: 10px; border-radius: 4px; }
-        .msg-user { font-weight: bold; color: white; font-size: 0.9em; margin-bottom: 4px; }
-        .embed { margin-top: 8px; max-width: 400px; display: block; border-radius: 8px; }
+        /* Chat Area */
+        .chat { flex: 1; display: flex; flex-direction: column; position: relative; }
+        .msg-list { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+        .msg { display: flex; flex-direction: column; }
+        .msg-u { font-weight: bold; color: white; margin-bottom: 4px; font-size: 1rem; }
+        .embed { max-width: 450px; border-radius: 8px; margin-top: 8px; border: 1px solid #232428; }
 
-        /* Input Area */
-        .input-box { padding: 20px; background: var(--bg-chat); }
-        .inner-input { background: #383a40; border-radius: 8px; display: flex; align-items: center; padding: 10px 15px; }
-        #msg-field { flex: 1; background: transparent; border: none; color: white; outline: none; padding: 5px; }
-        #user-field { width: 80px; background: transparent; border: none; color: var(--blurple); font-weight: bold; outline: none; }
-        
-        /* Modal for Invites */
-        #invite-modal { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background: #2b2d31; padding: 25px; border-radius: 8px; border: 2px solid var(--blurple); z-index: 1000; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        .btn { background: var(--blurple); color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; }
+        /* Input Bar */
+        .input-wrap { padding: 0 20px 20px 20px; position: relative; }
+        .input-box { background: #383a40; border-radius: 8px; padding: 11px; display: flex; align-items: center; gap: 12px; }
+        .plus-btn { width: 24px; height: 24px; background: #b5bac1; color: #383a40; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .plus-btn:hover { background: white; }
+        input { background: transparent; border: none; color: white; outline: none; flex: 1; font-size: 16px; }
+
+        /* Upload Popup Menu */
+        #upload-menu { display: none; position: absolute; bottom: 80px; left: 20px; width: 200px; background: var(--bg-pop); border-radius: 8px; padding: 8px; box-shadow: 0 8px 16px rgba(0,0,0,0.3); z-index: 100; }
+        .menu-item { padding: 10px; border-radius: 4px; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 10px; color: #dbdee1; }
+        .menu-item:hover { background: var(--blurple); color: white; }
+        .menu-item span { font-size: 18px; }
+
+        /* Modals */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 200; align-items: center; justify-content: center; }
+        .modal-card { background: #313338; width: 440px; padding: 24px; border-radius: 8px; text-align: center; }
+        .create-btn { background: var(--blurple); color: white; border: none; padding: 10px 24px; border-radius: 4px; width: 100%; cursor: pointer; font-weight: bold; margin-top: 20px; }
     </style>
 </head>
 <body>
 
-    <div class="server-sidebar">
-        <div class="server-icon active">C</div>
-        <button class="server-icon" onclick="showInvite()">+</button>
+    <div class="sidebar">
+        <div class="srv-btn">🏠</div>
+        <div class="srv-btn" onclick="document.getElementById('create-modal').style.display='flex'" style="color: #23a559;">+</div>
     </div>
 
-    <div class="channel-sidebar">
-        <div class="server-name">
-            <span id="display-name">Celcord</span>
+    <div class="channels">
+        <div class="srv-header">
+            <span id="srv-name-display">Celcord</span>
         </div>
-        <div style="height: 10px;"></div>
-        <div class="chan active" onclick="switchChannel('general', this)"># general</div>
-        <div class="chan" onclick="switchChannel('media', this)"># images-and-clips</div>
-        <div class="chan" onclick="switchChannel('off-topic', this)"># off-topic</div>
     </div>
 
-    <div class="chat-container">
-        <div id="chat-window"></div>
-        <div class="input-box">
-            <div class="inner-input">
-                <input type="text" id="user-field" placeholder="User" value="Guest">
-                <input type="text" id="msg-field" placeholder="Message #general">
+    <div class="chat">
+        <div class="msg-list" id="msgs"></div>
+
+        <!-- Upload Menu -->
+        <div id="upload-menu">
+            <div class="menu-item" onclick="document.getElementById('file-in').click()">
+                <span>📄</span> Upload a File
+            </div>
+            <div class="menu-item"><span>🧵</span> Create Thread</div>
+            <div class="menu-item"><span>📊</span> Create Poll</div>
+        </div>
+
+        <div class="input-wrap">
+            <div class="input-box">
+                <div class="plus-btn" onclick="toggleUploadMenu()">+</div>
+                <input type="text" id="username" placeholder="User" style="width: 60px; color: var(--blurple); font-weight: bold;">
+                <input type="text" id="msg-in" placeholder="Message #general">
+                <input type="file" id="file-in" style="display:none" onchange="handleFileUpload(this)">
             </div>
         </div>
     </div>
 
-    <div id="invite-modal">
-        <h2 style="margin-top:0">Server Invite</h2>
-        <p>Send this link to your friends:</p>
-        <input type="text" id="invite-url" readonly style="width:100%; padding:8px; background:#1e1f22; border:none; color:white; margin-bottom:15px;">
-        <button class="btn" onclick="document.getElementById('invite-modal').style.display='none'">Close</button>
+    <!-- Create Server Modal -->
+    <div id="create-modal" class="modal">
+        <div class="modal-card">
+            <h2>Create Your Server</h2>
+            <input type="text" id="new-srv-name" placeholder="Server Name" style="width:100%; padding:10px; margin-top:10px;">
+            <button class="create-btn" onclick="location.search='?server='+document.getElementById('new-srv-name').value">Create</button>
+            <button onclick="document.getElementById('create-modal').style.display='none'" style="background:none; border:none; color:white; margin-top:10px; cursor:pointer;">Back</button>
+        </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, push, onChildAdded, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, push, onChildAdded, serverTimestamp, off } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // CONFIG FROM celcord-89727
         const firebaseConfig = {
             apiKey: "AIzaSyDVMvB87r5yb91NeJP7Fy3ro-F7KD_a6Vw",
             authDomain: "celcord-89727.firebaseapp.com",
@@ -90,73 +106,68 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // GET SERVER AND CHANNEL FROM URL
         const params = new URLSearchParams(window.location.search);
-        let currentServer = params.get('invite') || 'main-hub';
-        let currentChannel = 'general';
-        document.getElementById('display-name').innerText = currentServer.toUpperCase();
+        let srvID = params.get('server') || 'main-hub';
+        document.getElementById('srv-name-display').innerText = srvID;
 
-        let msgRef = ref(db, `servers/${currentServer}/channels/${currentChannel}`);
+        let currentRef = ref(db, `servers/${srvID}/messages`);
 
-        // SWITCH CHANNEL FUNCTION
-        window.switchChannel = (name, el) => {
-            currentChannel = name;
-            document.querySelectorAll('.chan').forEach(c => c.classList.remove('active'));
-            el.classList.add('active');
-            document.getElementById('msg-field').placeholder = `Message #${name}`;
-            document.getElementById('chat-window').innerHTML = ''; // Clear for new channel
-            msgRef = ref(db, `servers/${currentServer}/channels/${currentChannel}`);
-            listenForMessages();
+        // UI Logic
+        window.toggleUploadMenu = () => {
+            const m = document.getElementById('upload-menu');
+            m.style.display = m.style.display === 'block' ? 'none' : 'block';
         };
 
-        // INVITE SYSTEM
-        window.showInvite = () => {
-            const link = `${window.location.href.split('?')[0]}?invite=${currentServer}`;
-            document.getElementById('invite-url').value = link;
-            document.getElementById('invite-modal').style.display = 'block';
-        };
+        // IMAGE UPLOAD LOGIC (via ImgBB)
+        window.handleFileUpload = async (input) => {
+            const file = input.files[0];
+            if (!file) return;
+            
+            toggleUploadMenu();
+            const formData = new FormData();
+            formData.append("image", file);
 
-        // SENDING MESSAGES
-        const input = document.getElementById('msg-field');
-        input.addEventListener('keypress', (e) => {
-            if(e.key === 'Enter' && input.value.trim() !== "") {
-                const user = document.getElementById('user-field').value;
-                push(msgRef, {
-                    user: user,
-                    text: input.value,
-                    time: serverTimestamp()
-                });
-                input.value = "";
-            }
-        });
-
-        // LISTENING & EMBEDDING
-        function listenForMessages() {
-            onChildAdded(msgRef, (snap) => {
-                const m = snap.val();
-                const div = document.createElement('div');
-                div.className = 'message';
-                
-                let content = `<div class="msg-user">${m.user}</div><div>${m.text}</div>`;
-                
-                // AUTO-EMBED LOGIC
-                if (m.text.match(/\.(jpeg|jpg|gif|png)$/) != null) {
-                    content += `<img class="embed" src="${m.text}">`;
-                } else if (m.text.includes('youtube.com/watch?v=')) {
-                    const id = m.text.split('v=')[1].split('&')[0];
-                    content += `<iframe class="embed" width="400" height="225" src="https://www.youtube.com/embed/${id}" frameborder="0" allowfullscreen></iframe>`;
-                } else if (m.text.match(/\.(mp4|webm)$/) != null) {
-                    content += `<video class="embed" controls src="${m.text}"></video>`;
-                }
-
-                div.innerHTML = content;
-                const chat = document.getElementById('chat-window');
-                chat.appendChild(div);
-                chat.scrollTop = chat.scrollHeight;
+            // Using a free ImgBB API key to handle uploads without Firebase Storage Paywall
+            const res = await fetch("https://api.imgbb.com/1/upload?key=69837c756976669f6885f8f8b3c4f9f4", {
+                method: "POST",
+                body: formData
             });
+            
+            const json = await res.json();
+            if (json.success) {
+                sendMsg(json.data.url);
+            } else {
+                alert("Upload failed. Try a smaller image.");
+            }
+        };
+
+        function sendMsg(text) {
+            const user = document.getElementById('username').value || "Guest";
+            push(currentRef, { u: user, t: text, time: serverTimestamp() });
         }
 
-        listenForMessages();
+        document.getElementById('msg-in').onkeypress = (e) => {
+            if(e.key === 'Enter' && e.target.value.trim() !== "") {
+                sendMsg(e.target.value);
+                e.target.value = "";
+            }
+        };
+
+        // Message Listener
+        off(currentRef);
+        onChildAdded(currentRef, (snap) => {
+            const data = snap.val();
+            const div = document.createElement('div');
+            div.className = 'msg';
+            let html = `<div class="msg-u">${data.u}</div><div>${data.t}</div>`;
+            if (data.t.match(/\.(jpeg|jpg|gif|png|webp)$/) != null || data.t.includes('i.ibb.co')) {
+                html += `<img src="${data.t}" class="embed">`;
+            }
+            div.innerHTML = html;
+            const list = document.getElementById('msgs');
+            list.appendChild(div);
+            list.scrollTop = list.scrollHeight;
+        });
     </script>
 </body>
 </html>
