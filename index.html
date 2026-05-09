@@ -2,76 +2,158 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>FriendGroup Backup Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CelCord | Backup Chat</title>
     <style>
-        body { background: #313338; color: #dcddde; font-family: sans-serif; display: flex; flex-direction: column; height: 100vh; margin: 0; }
-        #chat-box { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { background: #2b2d31; padding: 10px; border-radius: 8px; border-left: 4px solid #5865f2; }
-        .user { font-weight: bold; color: #fff; display: block; font-size: 0.9em; margin-bottom: 4px; }
-        #input-area { padding: 20px; background: #232428; display: flex; gap: 10px; }
-        input { flex: 1; padding: 12px; border-radius: 5px; border: none; background: #383a40; color: white; }
-        button { padding: 10px 20px; background: #5865f2; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        body { 
+            background: #313338; 
+            color: #dcddde; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            height: 100vh; 
+            margin: 0; 
+        }
+        
+        #header {
+            padding: 15px 20px;
+            background: #2b2d31;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            font-weight: bold;
+            color: #fff;
+            display: flex;
+            align-items: center;
+        }
+
+        #chat-box { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 12px; 
+        }
+
+        .msg { 
+            background: #2b2d31; 
+            padding: 12px; 
+            border-radius: 8px; 
+            max-width: 80%;
+            align-self: flex-start;
+            position: relative;
+        }
+
+        .user { 
+            font-weight: bold; 
+            color: #5865f2; 
+            display: block; 
+            font-size: 0.85em; 
+            margin-bottom: 4px; 
+            text-transform: uppercase;
+        }
+
+        #input-area { 
+            padding: 20px; 
+            background: #313338; 
+            display: flex; 
+            gap: 10px; 
+        }
+
+        input { 
+            padding: 12px; 
+            border-radius: 5px; 
+            border: none; 
+            background: #383a40; 
+            color: white; 
+            outline: none;
+        }
+
+        #username { width: 120px; }
+        #message { flex: 1; }
+
+        button { 
+            padding: 10px 20px; 
+            background: #5865f2; 
+            color: white; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        button:hover { background: #4752c4; }
     </style>
 </head>
 <body>
 
+    <div id="header"># general - CelCord</div>
+
     <div id="chat-box"></div>
 
     <div id="input-area">
-        <input type="text" id="username" placeholder="Your Name" style="width: 100px; flex: none;">
-        <input type="text" id="message" placeholder="Type a backup message...">
+        <input type="text" id="username" placeholder="Username">
+        <input type="text" id="message" placeholder="Message #general">
         <button id="sendBtn">Send</button>
     </div>
 
     <script type="module">
-        // Import the functions you need from the SDKs
+        // Import Firebase SDKs
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getDatabase, ref, push, onChildAdded, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // --- PASTE YOUR FIREBASE CONFIG CODE BELOW ---
+        // Your specific CelCord Configuration
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT.appspot.com",
-            messagingSenderId: "YOUR_ID",
-            appId: "YOUR_APP_ID"
+            apiKey: "AIzaSyDVMvB87r5yb91NeJP7Fy3ro-F7KD_a6Vw",
+            authDomain: "celcord-89727.firebaseapp.com",
+            databaseURL: "https://celcord-89727-default-rtdb.firebaseio.com",
+            projectId: "celcord-89727",
+            storageBucket: "celcord-89727.firebasestorage.app",
+            messagingSenderId: "382347512851",
+            appId: "1:382347512851:web:750eb3a20b4854d86903e6",
+            measurementId: "G-V73EGQTBE8"
         };
-        // --- PASTE YOUR FIREBASE CONFIG CODE ABOVE ---
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const messagesCol = collection(db, "messages");
+        const db = getDatabase(app);
+        const messagesRef = ref(db, 'messages');
 
-        // Send Message
         const sendBtn = document.getElementById('sendBtn');
         const msgInput = document.getElementById('message');
         const nameInput = document.getElementById('username');
+        const chatBox = document.getElementById('chat-box');
 
-        sendBtn.onclick = async () => {
-            if(msgInput.value !== "" && nameInput.value !== "") {
-                await addDoc(messagesCol, {
-                    user: nameInput.value,
-                    text: msgInput.value,
-                    createdAt: serverTimestamp()
+        // Function to send message
+        function handleSend() {
+            const user = nameInput.value.trim() || "Anonymous";
+            const text = msgInput.value.trim();
+
+            if(text !== "") {
+                push(messagesRef, {
+                    user: user,
+                    text: text,
+                    timestamp: serverTimestamp()
                 });
                 msgInput.value = "";
             }
-        };
+        }
 
-        // Listen for Messages (Realtime!)
-        const q = query(messagesCol, orderBy("createdAt", "asc"));
-        onSnapshot(q, (snapshot) => {
-            const chatBox = document.getElementById('chat-box');
-            chatBox.innerHTML = "";
-            snapshot.forEach((doc) => {
-                const data = doc.data();
-                const div = document.createElement('div');
-                div.className = "msg";
-                div.innerHTML = `<span class="user">${data.user}</span>${data.text}`;
-                chatBox.appendChild(div);
-            });
+        // Send on click
+        sendBtn.onclick = handleSend;
+
+        // Send on Enter key
+        msgInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleSend();
+        });
+
+        // Listen for new messages
+        onChildAdded(messagesRef, (data) => {
+            const msgData = data.val();
+            const div = document.createElement('div');
+            div.className = "msg";
+            div.innerHTML = `<span class="user">${msgData.user}</span>${msgData.text}`;
+            chatBox.appendChild(div);
             chatBox.scrollTop = chatBox.scrollHeight;
         });
     </script>
